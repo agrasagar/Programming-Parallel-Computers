@@ -6,15 +6,11 @@
 #include <cmath>
 
 void correlate(int ny, int nx, const float* data, float* result) {
-    /*
-    // FIXME
-    for (int i = 0; i < ny * ny; ++i) {
-        result[i] = 0.0f;
-    }
-    */
-    int y, rowStart, rowEnd, i,x,k;
-    double meanOfEachRow, meanOfSquareRoot;
-    std::vector<double> v(nx), vzeroSquaremean(nx), vrowfinal(nx);
+
+    int y, rowStart, rowEnd,x,k;
+    unsigned int i;
+    double meanOfEachRow, meanOfSquareRoot,num;
+    std::vector<double> v(nx), vzeroSquaremean(nx);
     std::vector <std::vector<double> > matrix(ny);
     std::vector <std::vector<double> > matrixT(nx);
 
@@ -26,17 +22,16 @@ void correlate(int ny, int nx, const float* data, float* result) {
       rowEnd = rowStart + nx;
       meanOfEachRow = std::accumulate(data+rowStart, data+rowEnd, 0.0)/nx;
 
-      //std::cout<<std::endl<<meanOfEachRow<<std::endl;
 
       std::transform(data+rowStart, data+rowEnd, v.begin(), [&meanOfEachRow](double val){ return (val - meanOfEachRow); });
-      //std::cout<<v.size()<<std::endl;
+
 
       std::transform(v.begin(), v.end(), vzeroSquaremean.begin(), [](double val){ return std::pow(val, 2); });
-      //std::cout<<vzeroSquaremean.size()<<std::endl;
+
 
       meanOfSquareRoot = std::sqrt(std::accumulate(vzeroSquaremean.begin(), vzeroSquaremean.end(), 0.0));
-      //std::cout<<std::endl<<meanOfSquareRoot<<std::endl;
 
+      /*
       std::transform(v.begin(), v.end(), vrowfinal.begin(), [&meanOfSquareRoot,&i,&matrixT,&matrix,&y](double val){
         double num;
         num = val/meanOfSquareRoot;
@@ -44,24 +39,26 @@ void correlate(int ny, int nx, const float* data, float* result) {
         i++;
         matrix[y].push_back(num);
         return num; });
+    */
 
-
-      //std::cout<<vrowfinal.size()<<std::endl;
-
+    for(i = 0; i < v.size(); ++i) {
+      num = v[i]/meanOfSquareRoot;
+      matrixT[i].push_back(num);
+      matrix[y].push_back(num);
     }
-
+  }
     //Matrix multiplication
     //matrix nx*ny
     //matrixT ny*nx
     //after multiplication product matrix would be of size ny*ny
 
-  
+
 
        for(y = 0; y< ny ; ++y){
          for(k = 0; k<nx; ++k){
-	   for(x = 0; x< ny ; ++x){
-		result[x + y*ny] += matrix[y][k]*matrixT[k][x];
-           }
+	          for(x = 0; x< ny ; ++x){
+		            result[x + y*ny] += matrix[y][k]*matrixT[k][x];
+            }
 
          }
        }
