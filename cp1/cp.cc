@@ -56,7 +56,7 @@ void correlate(int ny, int nx, const float* data, float* result) {
 
        for(y = 0; y< ny ; ++y){
          for(k = 0; k<nx; ++k){
-	          for(x = 0; x< ny ; ++x){
+	          for(x = y; x< ny ; ++x){
 		            result[x + y*ny] += matrix[y][k]*matrixT[k][x];
             }
 
