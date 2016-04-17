@@ -34,16 +34,13 @@ void mf(int ny, int nx, int hy, int hx, const float* in, float* out) {
         }
 
         size = medianFilter.size()/2;
-       // std::cout << "size is: " << size << '\n';
 	std::nth_element(medianFilter.begin(), medianFilter.begin() + (size), medianFilter.end());
         median = medianFilter.at(size);
-	//std::cout << "first median value  is: " <<median<< '\n';
         if ((medianFilter.size() % 2) == 0){
           std::nth_element(medianFilter.begin(), medianFilter.begin()+(size-1), medianFilter.begin()+size);
           median = (median + medianFilter[size-1])/2.0;
 	
         }
-	//std::cout << "Final median value is: " << median << '\n';
         out[x + y*nx] = median;
 
       }
