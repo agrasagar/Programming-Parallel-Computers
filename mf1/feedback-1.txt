@@ -1,0 +1,3 @@
+0
+OK, a bit slow. You could precompute the size of the window instead of checking it each time in the inner loop.
+Note that a single nth_element call suffices in the even case: the function “sorts” the input so that everything before the nth value is smaller than the nth element and everything after is larger. Thus, you can find the second value for calculating the median by simply looking for the minimum/maximum value (which can be done with a simple linear pass, e.g., std::min/max).
