@@ -7,7 +7,7 @@
 
 void correlate(int ny, int nx, const float* data, float* result) {
 
-    int y, rowStart, rowEnd,x,k;
+    int y, rowStart, rowEnd;
     unsigned int i;
     double meanOfEachRow, meanOfSquareRoot,num;
     std::vector<double> v(nx), vzeroSquaremean(nx);
@@ -40,20 +40,23 @@ void correlate(int ny, int nx, const float* data, float* result) {
     //matrix nx*ny
     //after multiplication product matrix would be of size ny*ny
 
-	#pragma omp parallel shared(result,matrix) private(x,y,k) 
+	#pragma omp parallel shared (matrix, result) 
 	{
+	int j;
+	int k;
+	int m;
 	#pragma omp for schedule(static, 1)
-	for(x = 0; x< ny ; ++x){
+	for(j = 0; j< ny ; ++j){
 				
-		for( y = 0; y <= x ; ++y){
+		for( k = j; k < ny ; ++k){
 					double sum;
 					sum = 0.0;
 					
-                        		for(k = 0; k< nx ; ++k){
+                        		for(m = 0; m< nx ; ++m){
 				
-                                		 sum += matrix[x][k] * matrix[y][k];
+                                		 sum += matrix[j][m] * matrix[k][m];
                         		}	
-						result[x + y*ny] = sum;
+						result[k + j*ny] = sum;
 			}
 
         }

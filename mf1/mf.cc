@@ -4,16 +4,19 @@
 #include <algorithm>
 #include <functional>
 
-
-
 void mf(int ny, int nx, int hy, int hx, const float* in, float* out) {
     int size;
     std::vector<float> medianFilter;
     float median;
-    int x,y,window_y,window_x;
+    int xy;
    // medianFilter.reserve(hx*hy);   
-    for(y = 0; y< ny; y++){     //for traversing through y axis
-      for(x = 0; x< nx; x++){   //for traversing through x axis
+
+       // #pragma omp parallel for      
+        for(xy = 0; xy < nx*ny; ++xy){   //for traversing through x axis
+        int x = xy / ny;
+        int y = xy % ny;
+	int window_y;
+	int window_x;
         medianFilter.clear();
 
         for(window_y = y - hy; window_y<= y + hy ; window_y++){ //traversing window y axis
@@ -34,17 +37,16 @@ void mf(int ny, int nx, int hy, int hx, const float* in, float* out) {
         }
 
         size = medianFilter.size()/2;
-	std::nth_element(medianFilter.begin(), medianFilter.begin() + (size), medianFilter.end());
+        std::nth_element(medianFilter.begin(), medianFilter.begin() + (size), medianFilter.end());
         median = medianFilter.at(size);
         if ((medianFilter.size() % 2) == 0){
           std::nth_element(medianFilter.begin(), medianFilter.begin()+(size-1), medianFilter.begin()+size);
           median = (median + medianFilter[size-1])/2.0;
-	
+
         }
         out[x + y*nx] = median;
 
       }
 
-    }
 }
 
