@@ -85,7 +85,7 @@ void correlate(int ny, int nx, const float* data, float* result) {
 		int m;
 		bool endChck = false;
 		int endVal = ny%3;
-		#pragma omp for schedule(static, 1)
+		#pragma omp for schedule(dynamic)
 		for(j = 0; j< ny ; j=j+3 ){
 			if( (j+3)> ny){
 				endChck = true;
