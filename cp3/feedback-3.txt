@@ -1,0 +1,3 @@
+0
+- I wonder if there is some specific reason to declare all variables at the start.
+- What the code does seems okay

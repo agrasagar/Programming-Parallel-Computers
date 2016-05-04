@@ -1,0 +1,6 @@
+0
+- You should really try to reduce repetition:
+    - Summing values in a vector type could be done with an inline function or just a for loop
+    - The sjk, sjkp, sjkpp etc. could just be float8_t sjk[3][3] = {};
+    - A loop like "for(int k=0; k<8; ++k)" should get unrolled
+
