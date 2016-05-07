@@ -61,7 +61,7 @@ Result segment(int ny, int nx, const float* data) {
 	for(i = 1; i<=ny; ++i){
 		for( j=1; j<=nx; ++j){
 				X = 1/(i*j);
-				Y = 1/(totSize - X); 		
+				Y = 1/(totSize - (i*j)); 		
 				//moving the box 2 consecutive for loops
 				for( k= 0; k<ny-k+1; ++k){
 					 double4_t Vxy = double4_0;
@@ -82,7 +82,11 @@ Result segment(int ny, int nx, const float* data) {
 						Hxy[1] = pow(Vxy[1],2)*X + pow(totBack[1],2)*Y;
 						Hxy[2] = pow(Vxy[2],2)*X + pow(totBack[2],2)*Y;
 						tempMax = Hxy[0] + Hxy[1] + Hxy[2];
+						std::cout<<std::endl<<"Goes Once"<<std::endl;
+						std::cout<<std::endl<<"Temp Val = "<<tempMax<<"Max val is= "<<maxVal<<std::endl;
+						std::cout<<std::endl<<"-------------------------"<<std::endl;
 						if(tempMax > maxVal){
+							std::cout<<std::endl<<"Goes Once"<<std::endl;
 							maxVal = tempMax;
 							result.x0 = (m);
 							result.y0 = (k);
