@@ -3,14 +3,15 @@
 #include "../common/vector.h"
 #include <iostream>
 #include <ctime>
+#include <math.h>
 
 Result segment(int ny, int nx, const float* data) {
 	// FIXME
 	Result result { ny/3, nx/3, 2*ny/3, 2*nx/3, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f} };
-	int i,j,jj,ii,c, travx;
+	int i,j,ii,jj,k,m,c, travx;
 	std::clock_t start;
    	double duration;
-
+	std::cout<<"\n\n\n\n\n\n\nStart again\n\n";
     	start = std::clock();
     	/* Your algorithm here */
     	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
@@ -18,10 +19,7 @@ Result segment(int ny, int nx, const float* data) {
 	start = std::clock();	
 	//Preprocessing colours in vector col
 	/*{{{*/
-	double* sRectc1 = (double*)malloc((nx*ny)*sizeof(double));
-	double* sRectc2 = (double*)malloc((nx*ny)*sizeof(double));
-	double* sRectc3 = (double*)malloc((nx*ny)*sizeof(double));
-
+	double4_t* sRect = double4_alloc(nx*ny);
 	double4_t totBack;
 	double4_t* col = double4_alloc(nx*ny);
 	travx = 0;
@@ -32,62 +30,103 @@ Result segment(int ny, int nx, const float* data) {
 			col[travx] = double4_0;
 			for(c = 0; c<3; ++c){
 				col[travx][c] = data[c + 3 * j + 3 * nx * i];
-				std::cout<<std::endl<<"colour value is "<<data[c + 3 * j + 3 * nx * i];
 			}
 			totBack+=col[travx];
 			travx++;
-			std::cout<<std::endl;
 		}	
 	}
-	std::cout<<std::endl;
-	for(i =0; i< (nx*ny); i++){
-		std::cout<<col[i][0]<<" "<<col[i][1]<<" "<<col[i][2]<<" "<<col[i][3];
-		std::cout<<std::endl;
-	}
-	std::cout<<"total is "<<totBack[0]<<" "<<totBack[1]<<" "<<totBack[2]<<" "<<totBack[3]<<std::endl;	
-	/**}}}*/
-	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-        std::cout<<"time spent: "<< duration <<'\n';
-	std::cout<<std::endl;
-	//making sum from 0,0 point to x,y and saving them in sRectc(n)
+	//making sum from 0,0 point to x,y and saving them in sRectc
 	/*{{{*/
+	travx = nx;
 	for( i = 0; i<ny; ++i){
 		for( j= 0; j< nx; ++j){
+			sRect[i*travx+j] = double4_0;
 			for( ii = i; ii>=0 ; --ii){
 				for(jj = j; jj>=0; --jj){
-					std::cout<<std::endl;
-					sRectc1[j + i*ny] += data[0 + 3 * jj + 3 * nx * ii];
-					std::cout<<"value of c1 is "<<data[0 + 3 * jj + 3 * nx * ii]<<"     ";
-					sRectc2[j + i*ny] += data[1 + 3 * jj + 3 * nx * ii];
-					std::cout<<"value of c2 is "<<data[1 + 3 * jj + 3 * nx * ii]<<"      ";
-					sRectc3[j + i*ny] += data[2 + 3 * jj + 3 * nx * ii];
-					std::cout<<"value of c3 is "<<data[2 + 3 * jj + 3 * nx * ii]<<"      ";
+					sRect[i*travx+j] += col[ii*travx + jj];
 				}				
 			}
-			std::cout<<std::endl<<"srectc1="<<sRectc1[j + i*ny]<<"   srectc2="<<sRectc2[j + i*ny]<<"   srectc3="<<sRectc3[j + i*ny];	
 		}			
 	}
 	/*}}}*/	
-	std::cout<<std::endl<<"srect1\n";
-	for(i = 0; i< ny; ++i){
-		for(j = 0; j< nx; ++j){
-			std::cout<<sRectc1[j + i*ny]<<" ";
+	double maxVal = 0;
+	double tempMax = 0;
+	int X;		//reciprocal of X
+	int Y;		//reciprocal of Y
+	int totSize = nx*ny;
+	double4_t Hxy = double4_0;
+	//traversing through pixels with diff size of boxes
+	//making the box 2 consecutive for loops (0,0) constant
+	// i*j is the size of the boxes
+	for(i = 1; i<=ny; ++i){
+		for( j=1; j<=nx; ++j){
+				X = 1/(i*j);
+				Y = 1/(totSize - X); 		
+				//moving the box 2 consecutive for loops
+				for( k= 0; k<ny-k+1; ++k){
+					 double4_t Vxy = double4_0;
+					for(m = 0;m<nx-m+1; ++m){
+						if(k == 0 && m == 0){
+							Vxy = sRect[(k + i -1)*travx + (m + j - 1)];
+						}
+						else if(k == 0){
+							Vxy = sRect[(k + i -1)*travx + (m + j - 1)] - sRect[(k + i -1)*travx +(m - 1)];
+						}
+						else if(m == 0){
+							Vxy = sRect[(k + i -1)*travx + (m + j - 1)] - sRect[(k - 1)*travx + (m + j - 1)];
+						}
+						else{
+							Vxy = sRect[(k + i -1)*travx + (m + j - 1)] - sRect[(k + i - 1)*travx + (m + j - 2)] - sRect[(k - 1)*travx + (m + j - 1)] + sRect[(k - 1)*travx + (m -1)];
+						}
+						Hxy[0] = pow(Vxy[0],2)*X + pow(totBack[0],2)*Y;
+						Hxy[1] = pow(Vxy[1],2)*X + pow(totBack[1],2)*Y;
+						Hxy[2] = pow(Vxy[2],2)*X + pow(totBack[2],2)*Y;
+						tempMax = Hxy[0] + Hxy[1] + Hxy[2];
+						if(tempMax > maxVal){
+							maxVal = tempMax;
+							result.x0 = (m);
+							result.y0 = (k);
+							result.x1 = (m + j);
+							result.y1 = (k + i);
+							result.inner[0] = col[(k + i -1)*travx + (m + j - 1)][0];
+							result.inner[1] = col[(k + i -1)*travx + (m + j - 1)][1];
+							result.inner[2] = col[(k + i -1)*travx + (m + j - 1)][2];
+							if( m-1 >= 0){
+								result.outer[0] = col[(k)*travx + (m - 1)][0];
+								result.outer[1] = col[(k)*travx + (m - 1)][1];
+								result.outer[2] = col[(k)*travx + (m - 1)][2];
+							}
+							else if( (m+j) < nx ){
+								result.outer[0] = col[(k)*travx + (m + j)][0];
+								result.outer[1] = col[(k)*travx + (m + j)][1];
+								result.outer[2] = col[(k)*travx + (m + j)][2];
+							}
+							else if( k-1 >= 0){
+								result.outer[0] = col[(k-1)*travx + (m)][0];
+								result.outer[1] = col[(k-1)*travx + (m)][1];
+								result.outer[2] = col[(k-1)*travx + (m)][2];
+							}
+							else if( (k+i) < ny){	
+								result.outer[0] = col[(k+i)*travx + (m)][0];
+								result.outer[1] = col[(k+i)*travx + (m)][1];
+								result.outer[2] = col[(k+i)*travx + (m)][2];
+							}
+
+
+
+							std::cout<<std::endl<<"y0 x0 y1 x1 are "<<result.y0<<"  "<<result.x0<<"  "<<result.y1<<"  "<<result.x1<<std::endl;
+							std::cout<<std::endl<<"colors are "<<result.inner[0]<<result.inner[1]<<result.inner[2]<<std::endl;
+						}
+					}
+				}
 		}
-		std::cout<<std::endl;
-	}	
-	std::cout<<std::endl<<"srect2\n";
-	for(i = 0; i< ny; ++i){
-                for(j = 0; j< nx; ++j){
-                        std::cout<<sRectc2[j + i*ny]<<" ";
-                }
-                std::cout<<std::endl;
-        }
-	std::cout<<std::endl<<"srect3\n";
-  	for(i = 0; i< ny; ++i){
-                for(j = 0; j< nx; ++j){
-                        std::cout<<sRectc3[j + i*ny]<<" ";
-                }
-                std::cout<<std::endl;
-        }
+	}
+	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+        std::cout<<"time spent for whole : "<<(float) duration <<'\n';
+        std::cout<<std::endl;
+
+
+
+
 	return result;
 }
