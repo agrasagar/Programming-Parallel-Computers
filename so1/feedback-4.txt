@@ -1,0 +1,3 @@
+-1
+- The logic incorrectly assumes that omp_get_max_threads() returns a power of two. Try running
+OMP_NUM_THREADS=12 ./so-test 1000
