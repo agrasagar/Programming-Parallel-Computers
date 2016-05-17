@@ -8,7 +8,7 @@
 Result segment(int ny, int nx, const float* data) {
 	// FIXME
 	Result result { ny/3, nx/3, 2*ny/3, 2*nx/3, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f} };
-	int i,j,ii,jj,k,m,c, travx;
+	int i,j,k,m,c,travx;
 	//Preprocessing colours in vector col
 	/*{{{*/
 	double4_t* sRect = double4_alloc((nx+1)*(ny+1));
@@ -40,12 +40,10 @@ Result segment(int ny, int nx, const float* data) {
 	}
 	
 
-	(void)ii;
-	(void)jj;
 	
 	double maxVal = 0;
 	int totSize = nx*ny;
-	#pragma omp parallel
+//	#pragma omp parallel
 	{
 	double tempMax = 0;
 	//traversing through pixels with diff size of boxes
@@ -67,23 +65,15 @@ Result segment(int ny, int nx, const float* data) {
                                         double4_t Yxy = double4_0;
 					for(m = 0;m<condm; ++m){
 							
-							if( k ==0 && m==0){
-								Vxy = sRect[(k+i)*travx + (m+j)];		
-							}
-							else if( m==0){
-								Vxy =sRect[(k+i)*travx + (m+j)]-sRect[(k)*travx + (m+j)];
-							}
-							else if( k==0){
-								Vxy = sRect[(k+i)*travx + (m+j)]-sRect[(k+i)*travx + (m)];
-							}	
-							else{
-							Vxy = sRect[(k+i)*travx + (m+j)] -sRect[(k+i)*travx + (m)]-sRect[(k)*travx + (m+j)]+sRect[(k)*travx + (m)];
-							}
-							Yxy = totBack - Vxy;
-							Hxy[0] = pow(Vxy[0],2)*X + pow(Yxy[0],2)*Y;
-							Hxy[1] = pow(Vxy[1],2)*X + pow(Yxy[1],2)*Y;
-							Hxy[2] = pow(Vxy[2],2)*X + pow(Yxy[2],2)*Y;		
-							tempMax = Hxy[0] + Hxy[1] + Hxy[2];
+						Vxy = sRect[(k+i)*travx + (m+j)] -sRect[(k+i)*travx + (m)]-sRect[(k)*travx + (m+j)]+sRect[(k)*travx + (m)];
+						Yxy = totBack - Vxy;
+							
+						Hxy[0] = pow(Vxy[0],2)*X + pow(Yxy[0],2)*Y;
+						Hxy[1] = pow(Vxy[1],2)*X + pow(Yxy[1],2)*Y;
+						Hxy[2] = pow(Vxy[2],2)*X + pow(Yxy[2],2)*Y;		
+						
+						tempMax = Hxy[0] + Hxy[1] + Hxy[2];
+							
 							if(tempMax >= maxVal){
 								maxVal = tempMax;
 								result.x0 = m;
