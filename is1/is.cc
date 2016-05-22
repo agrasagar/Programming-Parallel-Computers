@@ -21,7 +21,6 @@ Result segment(int ny, int nx, const float* data) {
 		for(j = 0; j<= nx; ++j){
 			if(i == 0 || j ==0){
 				 col[i*travx+j] = double4_0;
-				 sRect[i*travx+j] = double4_0;
 			}
 			else{
 				col[i*travx+j] = double4_0;
@@ -45,11 +44,16 @@ Result segment(int ny, int nx, const float* data) {
 	
 	double maxVal = 0;
 	int totSize = nx*ny;
-	
+	#pragma omp parallel private(k,m,i,j)
 	{
+	int tmpm = 0,tmpk = 0, tmpi = 0, tmpj = 0;
+        double4_t tmpVxy = double4_0;
+        double4_t tmpYxy = double4_0;
+	double tmpX = 0, tmpY=0;
+	double maxValPriv = 0;
 	//traversing through pixels with diff size of boxes
 	//making the box 2 consecutive for loops (0,0) constant
-	#pragma omp parallel for schedule(dynamic) private(k,m,i,j)
+	#pragma omp for schedule(static,1) 
 	for(i = 1; i<=ny; ++i){
 		for(j=1; j<=nx; ++j){
 				
@@ -60,24 +64,22 @@ Result segment(int ny, int nx, const float* data) {
 				int condk = ny-i+1;
 				int condm = nx-j+1;	
 				double tempMax = 0;
-				double maxValPriv = 0;
-				int tmpm = 0,tmpk = 0;
-                                double4_t tmpVxy = double4_0;
-                                double4_t tmpYxy = double4_0;
+				int ki,mj;
 				//moving the box 2 consecutive for loops
 				for( k= 0; k<condk; ++k){
 					double4_t Hxy = double4_0;
 					double4_t Vxy = double4_0;
                                 	double4_t Yxy = double4_0;
 					for(m = 0;m<condm; ++m){
-							
-						Vxy = sRect[(k+i)*travx + (m+j)] -sRect[(k+i)*travx + (m)]-sRect[(k)*travx + (m+j)]+sRect[(k)*travx + (m)];
+						
+						ki = k + i;
+						mj = m + j;	
+						Vxy = sRect[(ki)*travx + (mj)] -sRect[(ki)*travx + (m)]-sRect[(k)*travx + (mj)]+sRect[(k)*travx + (m)];
 						Yxy = totBack - Vxy;
 							
 						Hxy[0] = pow(Vxy[0],2)*X + pow(Yxy[0],2)*Y;
 						Hxy[1] = pow(Vxy[1],2)*X + pow(Yxy[1],2)*Y;
 						Hxy[2] = pow(Vxy[2],2)*X + pow(Yxy[2],2)*Y;		
-						
 						tempMax = Hxy[0] + Hxy[1] + Hxy[2];
 							
 							if(tempMax >= maxValPriv){
@@ -86,27 +88,31 @@ Result segment(int ny, int nx, const float* data) {
 								tmpk = k;	
 								tmpVxy = Vxy;	
 								tmpYxy = Yxy;
+								tmpi = i;
+								tmpj = j;
+								tmpX = X;
+								tmpY = Y;
 							}				
 						}
 					}
-					#pragma omp critical
-					if(maxValPriv > maxVal){
-                                        	maxVal = maxValPriv;
-                                                result.x0 = tmpm;
-                                                result.y0 = tmpk;
-                                                result.x1 = tmpm+j;
-                                                result.y1 = tmpk+i;
-                                                result.inner[0] = tmpVxy[0]*X;
-                                                result.inner[1] = tmpVxy[1]*X;
-                                                result.inner[2] = tmpVxy[2]*X;
-                                                result.outer[0] = tmpYxy[0]*Y;
-                                                result.outer[1] = tmpYxy[1]*Y;
-                                                result.outer[2] = tmpYxy[2]*Y;
-                        
-                                       }      					
-
 			}
 		}
+		#pragma omp critical
+                if(maxValPriv > maxVal){
+                	maxVal = maxValPriv;
+                        result.x0 = tmpm;
+                        result.y0 = tmpk;
+                        result.x1 = tmpm+tmpj;
+                        result.y1 = tmpk+tmpi;
+                        
+			result.inner[0] = (float)tmpVxy[0]*tmpX;
+                        result.inner[1] = (float)tmpVxy[1]*tmpX;
+                        result.inner[2] = (float)tmpVxy[2]*tmpX;
+                        result.outer[0] = (float)tmpYxy[0]*tmpY;
+                        result.outer[1] = (float)tmpYxy[1]*tmpY;
+                        result.outer[2] = (float)tmpYxy[2]*tmpY;
+                        
+               }                                        
 	}
 	
 	return result;
